@@ -1,18 +1,10 @@
-[workspace.package]
-version = "0.4.0"
+[package]
+name = "netconfig-rs"
+rust-version = "1.85"
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/GamePad64/netconfig"
-rust-version = "1.64"
-
-[package]
-name = "netconfig"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-repository.workspace = true
-rust-version.workspace = true
-description = "Crate for managing network interfaces and IP addresses in a cross-platform way. Supports Windows and Linux (for now)"
+repository = "https://github.com/tun-rs/netconfig-rs"
+description = "Crate for managing network interfaces and IP addresses in a cross-platform way"
 categories = ["os", "network-programming"]
 keywords = ["network", "networking", "cross-platform"]
 
@@ -41,7 +33,3 @@ delegate = "0.8.0"
 thiserror = "1.0.37"
 advmac = "1.0.3"
 
-[workspace]
-members = [
-    "netconfigctl"
-]

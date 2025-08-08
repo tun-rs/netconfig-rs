@@ -33,7 +33,9 @@ impl Interface {
         }
     }
 
-    pub fn from_index_unchecked(index: u32) -> Self {
+    /// # Safety
+    /// The passed interface index must be valid
+    pub unsafe fn from_index_unchecked(index: u32) -> Self {
         Self(sys::InterfaceHandle { index })
     }
 
