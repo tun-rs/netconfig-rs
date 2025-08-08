@@ -14,12 +14,14 @@ use netlink_sys::constants::NETLINK_ROUTE;
 use netlink_sys::{Socket, SocketAddr};
 use std::net::IpAddr;
 use std::os::unix::io::AsRawFd;
+use nix::net::if_::InterfaceFlags;
 
 // Public interface (platform extension)
 pub trait InterfaceExt {
     fn set_up(&self, v: bool) -> Result<(), Error>;
     fn set_running(&self, v: bool) -> Result<(), Error>;
     fn set_hwaddress(&self, hwaddress: MacAddr6) -> Result<(), Error>;
+    fn set_packet_info(&self, v: bool) -> Result<(), Error>;
 }
 
 // Private interface
@@ -109,6 +111,13 @@ impl InterfaceExt for Interface {
         let socket = dummy_socket()?;
 
         unsafe { ioctls::siocsifhwaddr(socket.as_raw_fd(), &req) }?;
+        Ok(())
+    }
+
+    fn set_packet_info(&self, v: bool) -> Result<(), Error> {
+        let mut flags = self.0.flags()?;
+        flags.set(InterfaceFlags::IFF_NO_PI, !v);
+        self.0.set_flags(flags)?;
         Ok(())
     }
 }
