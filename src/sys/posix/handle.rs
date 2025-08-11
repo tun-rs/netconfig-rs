@@ -7,6 +7,7 @@ use nix::ifaddrs::getifaddrs;
 use nix::net::if_::InterfaceFlags;
 use nix::sys::socket::AddressFamily::{Inet, Inet6};
 use nix::sys::socket::SockaddrLike;
+use std::io;
 use std::net::IpAddr;
 use std::os::unix::io::AsRawFd;
 
@@ -22,25 +23,46 @@ impl InterfaceHandle {
 
             let (address, netmask) = match (address.family(), netmask.family()) {
                 (Some(Inet), Some(Inet)) => (
-                    IpAddr::V4(address.as_sockaddr_in().unwrap().ip()),
-                    IpAddr::V4(netmask.as_sockaddr_in().unwrap().ip()),
+                    IpAddr::V4(
+                        address
+                            .as_sockaddr_in()
+                            .ok_or(io::Error::other("empty address"))?
+                            .ip(),
+                    ),
+                    IpAddr::V4(
+                        netmask
+                            .as_sockaddr_in()
+                            .ok_or(io::Error::other("empty netmask"))?
+                            .ip(),
+                    ),
                 ),
                 (Some(Inet6), Some(Inet6)) => (
-                    IpAddr::V6(address.as_sockaddr_in6().unwrap().ip()),
-                    IpAddr::V6(netmask.as_sockaddr_in6().unwrap().ip()),
+                    IpAddr::V6(
+                        address
+                            .as_sockaddr_in6()
+                            .ok_or(io::Error::other("empty address"))?
+                            .ip(),
+                    ),
+                    IpAddr::V6(
+                        netmask
+                            .as_sockaddr_in6()
+                            .ok_or(io::Error::other("empty netmask"))?
+                            .ip(),
+                    ),
                 ),
                 (_, _) => continue,
             };
 
-            let prefix = ipnet::ip_mask_to_prefix(netmask).unwrap();
+            let prefix = ipnet::ip_mask_to_prefix(netmask)
+                .map_err(|e| std::io::Error::other(e.to_string()))?;
 
-            result.push(IpNet::new(address, prefix).unwrap());
+            result.push(IpNet::new(address, prefix).map_err(|e| io::Error::other(e.to_string()))?);
         }
         Ok(result)
     }
 
     pub fn mtu(&self) -> Result<u32, Error> {
-        let mut req = ifreq::new(self.name()?);
+        let mut req = ifreq::new(self.name()?)?;
         let socket = dummy_socket()?;
 
         unsafe {
@@ -50,7 +72,7 @@ impl InterfaceHandle {
     }
 
     pub fn set_mtu(&self, mtu: u32) -> Result<(), Error> {
-        let mut req = ifreq::new(self.name()?);
+        let mut req = ifreq::new(self.name()?)?;
         req.ifr_ifru.ifru_mtu = mtu as _;
 
         let socket = dummy_socket()?;
@@ -110,7 +132,7 @@ impl InterfaceHandle {
 
 impl InterfaceHandle {
     pub(crate) fn flags(&self) -> Result<InterfaceFlags, Error> {
-        let mut req = ifreq::new(self.name()?);
+        let mut req = ifreq::new(self.name()?)?;
         let socket = dummy_socket()?;
 
         unsafe {
@@ -122,7 +144,7 @@ impl InterfaceHandle {
     }
 
     pub(crate) fn set_flags(&self, flags: InterfaceFlags) -> Result<InterfaceFlags, Error> {
-        let mut req = ifreq::new(self.name()?);
+        let mut req = ifreq::new(self.name()?)?;
         req.ifr_ifru.ifru_flags = flags.bits() as _;
 
         let socket = dummy_socket()?;

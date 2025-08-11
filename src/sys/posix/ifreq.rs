@@ -4,6 +4,7 @@
 #![allow(dead_code)]
 
 use super::InterfaceName;
+use crate::error::Error;
 use std::fmt::Debug;
 use std::mem;
 
@@ -62,10 +63,11 @@ pub type ifaliasreq4 = ifaliasreq<libc::sockaddr_in>;
 pub type ifaliasreq6 = ifaliasreq<libc::sockaddr_in6>;
 
 impl ifreq {
-    pub fn new<T: Into<String>>(name: T) -> Self {
-        ifreq {
-            ifr_ifrn: InterfaceName::try_from(&*name.into()).unwrap(),
+    pub fn new<T: Into<String>>(name: T) -> Result<Self, Error> {
+        Ok(ifreq {
+            ifr_ifrn: InterfaceName::try_from(&*name.into())
+                .map_err(|e| std::io::Error::other(e.to_string()))?,
             ..Default::default()
-        }
+        })
     }
 }

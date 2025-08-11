@@ -73,19 +73,20 @@ impl InterfaceHandle {
         req.serialize(&mut buf);
 
         debug!(">>> {:?}", req);
-        socket.send(&buf, 0).unwrap();
+        socket.send(&buf, 0)?;
 
         Ok(())
     }
 
     pub fn hwaddress(&self) -> Result<MacAddr6, Error> {
-        let mut req = ifreq::new(self.name()?);
+        let mut req = ifreq::new(self.name()?)?;
         let socket = dummy_socket()?;
 
         unsafe { ioctls::siocgifhwaddr(socket.as_raw_fd(), &mut req) }?;
-        Ok(unsafe { &req.ifr_ifru.ifru_hwaddr.sa_data[0..6] }
-            .try_into()
-            .unwrap())
+        Ok(
+            TryInto::<MacAddr6>::try_into(unsafe { &req.ifr_ifru.ifru_hwaddr.sa_data[0..6] })
+                .map_err(|e| std::io::Error::other(e.to_string()))?,
+        )
     }
 }
 
@@ -98,7 +99,7 @@ impl InterfaceExt for Interface {
     }
 
     fn set_hwaddress(&self, hwaddress: MacAddr6) -> Result<(), Error> {
-        let mut req = ifreq::new(self.name()?);
+        let mut req = ifreq::new(self.name()?)?;
         req.ifr_ifru.ifru_hwaddr = libc::sockaddr {
             sa_family: ARPHRD_ETHER,
             sa_data: unsafe { std::mem::zeroed() },
