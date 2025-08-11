@@ -43,17 +43,6 @@ fn convert_sockaddr(sa: SOCKADDR_INET) -> SocketAddr {
 }
 
 impl InterfaceHandle {
-    fn get_mtu(&self, family: ADDRESS_FAMILY) -> Result<u32, Error> {
-        unsafe {
-            let mut row: MIB_IPINTERFACE_ROW = std::mem::zeroed();
-            InitializeIpInterfaceEntry(&mut row);
-            row.Family = family;
-            row.InterfaceIndex = self.index;
-            let ret = GetIpInterfaceEntry(&mut row);
-            ret.ok()?;
-            Ok(row.NlMtu)
-        }
-    }
     fn mib_if_row2(&self) -> Result<MIB_IF_ROW2, Error> {
         let mut row = MIB_IF_ROW2 {
             InterfaceIndex: self.index,
@@ -191,13 +180,13 @@ impl InterfaceHandle {
     }
 
     pub fn mtu(&self) -> Result<u32, Error> {
-        Ok(self.get_mtu_for_family(AF_INET)?)
+        self.get_mtu_for_family(AF_INET)
     }
     pub fn mtu_v4(&self) -> Result<u32, Error> {
-        Ok(self.get_mtu_for_family(AF_INET)?)
+        self.get_mtu_for_family(AF_INET)
     }
     pub fn mtu_v6(&self) -> Result<u32, Error> {
-        Ok(self.get_mtu_for_family(AF_INET6)?)
+        self.get_mtu_for_family(AF_INET6)
     }
     pub fn set_mtu_v4(&self, mtu: u32) -> Result<(), Error> {
         self.set_mtu_impl(mtu, AF_INET)
