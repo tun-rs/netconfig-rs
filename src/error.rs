@@ -43,3 +43,12 @@ impl From<widestring::error::Utf16Error> for Error {
         Self::UnexpectedMetadata
     }
 }
+
+impl Into<io::Error> for Error {
+    fn into(self) -> io::Error {
+        match self {
+            Error::Io(e) => e,
+            e => io::Error::other(format!("{:?}", e)),
+        }
+    }
+}
