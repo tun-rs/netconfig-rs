@@ -45,7 +45,6 @@ impl InterfaceHandle {
         let mut buf = vec![0; req.header.length as _];
         req.serialize(&mut buf);
 
-        debug!(">>> {:?}", req);
         socket.send(&buf, 0)?;
 
         Ok(())
@@ -71,7 +70,6 @@ impl InterfaceHandle {
         let mut buf = vec![0; req.header.length as _];
         req.serialize(&mut buf);
 
-        debug!(">>> {:?}", req);
         socket.send(&buf, 0)?;
 
         Ok(())
