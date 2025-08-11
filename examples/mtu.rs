@@ -36,6 +36,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     interface.set_mtu(1800)?;
     let mtu2 = interface.mtu()?;
     println!("after: {mtu2}");
-    interface.set_mtu(mtu)?;
+    //interface.set_mtu(mtu)?;
     Ok(())
 }

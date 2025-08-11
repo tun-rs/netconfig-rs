@@ -41,6 +41,14 @@ impl Interface {
     pub fn set_mtu_v6(&self, mtu: u32) -> Result<(), Error> {
         self.0.set_mtu_v6(mtu)
     }
+    #[cfg(windows)]
+    pub fn mtu_v4(&self) -> Result<u32, Error> {
+        self.0.mtu_v4()
+    }
+    #[cfg(windows)]
+    pub fn mtu_v6(&self) -> Result<u32, Error> {
+        self.0.mtu_v6()
+    }
     pub fn name(&self) -> Result<String, Error> {
         self.0.name()
     }

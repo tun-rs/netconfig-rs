@@ -13,8 +13,9 @@ use windows::Win32::NetworkManagement::IpHelper::{
     ConvertInterfaceAliasToLuid, ConvertInterfaceGuidToLuid, ConvertInterfaceIndexToLuid,
     ConvertInterfaceLuidToAlias, ConvertInterfaceLuidToGuid, ConvertInterfaceLuidToIndex,
     ConvertInterfaceLuidToNameW, ConvertInterfaceNameToLuidW, CreateUnicastIpAddressEntry,
-    DeleteUnicastIpAddressEntry, GetIfEntry2, GetIpInterfaceEntry, InitializeUnicastIpAddressEntry,
-    SetIpInterfaceEntry, MIB_IF_ROW2, MIB_IPINTERFACE_ROW, MIB_UNICASTIPADDRESS_ROW,
+    DeleteUnicastIpAddressEntry, GetIfEntry2, GetIpInterfaceEntry, InitializeIpInterfaceEntry,
+    InitializeUnicastIpAddressEntry, SetIpInterfaceEntry, MIB_IF_ROW2, MIB_IPINTERFACE_ROW,
+    MIB_UNICASTIPADDRESS_ROW,
 };
 use windows::Win32::NetworkManagement::Ndis::{IF_MAX_STRING_SIZE, NET_LUID_LH};
 use windows::Win32::Networking::WinSock::{
@@ -179,7 +180,13 @@ impl InterfaceHandle {
     }
 
     pub fn mtu(&self) -> Result<u32, Error> {
-        Ok(self.mib_if_row2()?.Mtu)
+        Ok(self.get_mtu_for_family(AF_INET)?)
+    }
+    pub fn mtu_v4(&self) -> Result<u32, Error> {
+        Ok(self.get_mtu_for_family(AF_INET)?)
+    }
+    pub fn mtu_v6(&self) -> Result<u32, Error> {
+        Ok(self.get_mtu_for_family(AF_INET6)?)
     }
     pub fn set_mtu_v4(&self, mtu: u32) -> Result<(), Error> {
         self.set_mtu_impl(mtu, AF_INET)
@@ -194,19 +201,10 @@ impl InterfaceHandle {
         Ok(())
     }
     fn set_mtu_impl(&self, mtu: u32, family: ADDRESS_FAMILY) -> Result<(), Error> {
-        let mut row = MIB_IPINTERFACE_ROW {
-            Family: family,
-            InterfaceIndex: self.index,
-            ..Default::default()
-        };
-
-        let code = unsafe { GetIpInterfaceEntry(&mut row) };
-        match code.ok().map_err(HRESULT::from) {
-            Ok(_) => Ok(()),
-            Err(ERROR_FILE_NOT_FOUND) => Err(Error::InterfaceNotFound),
-            Err(e) => Err(WinError::from(e).into()),
-        }?;
-
+        let mut row: MIB_IPINTERFACE_ROW = unsafe { std::mem::zeroed() };
+        unsafe { InitializeIpInterfaceEntry(&mut row) };
+        row.Family = family;
+        row.InterfaceIndex = self.index;
         row.NlMtu = mtu;
 
         let code = unsafe { SetIpInterfaceEntry(&mut row) };
@@ -214,6 +212,27 @@ impl InterfaceHandle {
             Ok(_) => Ok(()),
             Err(ERROR_FILE_NOT_FOUND) => Err(Error::InterfaceNotFound),
             Err(ERROR_ACCESS_DENIED) => Err(io::Error::from(ErrorKind::PermissionDenied).into()),
+            Err(e) => Err(WinError::from(e).into()),
+        }
+    }
+
+    pub fn get_mtu_for_family(&self, family: ADDRESS_FAMILY) -> Result<u32, Error> {
+        let mut row: MIB_IPINTERFACE_ROW = unsafe { std::mem::zeroed() };
+        unsafe { InitializeIpInterfaceEntry(&mut row) };
+
+        row.Family = family;
+        row.InterfaceIndex = self.index;
+
+        let code = unsafe { GetIpInterfaceEntry(&mut row) };
+        match code.ok().map_err(HRESULT::from) {
+            Ok(_) => {
+                if row.NlMtu < 65535 {
+                    return Ok(row.NlMtu);
+                }
+                let link_mtu = self.mib_if_row2()?.Mtu;
+                Ok(link_mtu)
+            }
+            Err(ERROR_FILE_NOT_FOUND) => Err(Error::InterfaceNotFound),
             Err(e) => Err(WinError::from(e).into()),
         }
     }
