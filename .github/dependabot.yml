@@ -1,11 +1,10 @@
 version: 2
 updates:
-  - package-ecosystem: cargo
+  - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: daily
-    open-pull-requests-limit: 10
-    target-branch: main
-    ignore:
-      - dependency-name: "*"
-        update-types: [ "version-update:semver-patch" ]
+      interval: "daily"
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "daily"
