@@ -1,6 +1,6 @@
 use super::scinterface::SCNetworkInterface;
-use crate::sys::{ifreq, InterfaceName};
 use crate::sys::{dummy_socket, ioctls, InterfaceHandle};
+use crate::sys::{ifreq, InterfaceName};
 use crate::{Error, Interface};
 use advmac::MacAddr6;
 use delegate::delegate;
@@ -26,7 +26,9 @@ impl InterfaceHandle {
                 let ifra_dest_mask = SockaddrIn::from(net::SocketAddrV4::new(network.netmask(), 0));
 
                 let req = ifreq::ifaliasreq4 {
-                    ifra_name: name.parse::<InterfaceName>().map_err(|e| std::io::Error::other(e.to_string()))?,
+                    ifra_name: name
+                        .parse::<InterfaceName>()
+                        .map_err(|e| std::io::Error::other(e.to_string()))?,
                     ifra_addr: *ifra_addr.as_ref(),
                     ifra_broadaddr: *ifra_dest_addr.as_ref(),
                     ifra_mask: *ifra_dest_mask.as_ref(),
@@ -45,7 +47,9 @@ impl InterfaceHandle {
                     SockaddrIn6::from(net::SocketAddrV6::new(network.netmask(), 0, 0, 0));
 
                 let req = ifreq::ifaliasreq6 {
-                    ifra_name: name.parse::<InterfaceName>().map_err(|e| std::io::Error::other(e.to_string()))?,
+                    ifra_name: name
+                        .parse::<InterfaceName>()
+                        .map_err(|e| std::io::Error::other(e.to_string()))?,
                     ifra_addr: *ifra_addr.as_ref(),
                     ifra_broadaddr: *ifra_dest_addr.as_ref(),
                     ifra_mask: *ifra_dest_mask.as_ref(),
