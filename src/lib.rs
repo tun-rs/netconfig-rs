@@ -25,6 +25,8 @@ impl Interface {
 
             pub fn mtu(&self) -> Result<u32, Error>;
             pub fn set_mtu(&self, mtu: u32) -> Result<(), Error>;
+            pub fn set_mtu_v4(&self, mtu: u32) -> Result<(), Error>;
+            pub fn set_mtu_v6(&self, mtu: u32) -> Result<(), Error>;
 
             pub fn name(&self) -> Result<String, Error>;
             pub fn index(&self) -> Result<u32, Error>;

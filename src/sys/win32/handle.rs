@@ -3,7 +3,6 @@ use crate::sys::InterfaceHandle;
 use crate::{Error, Interface};
 use advmac::MacAddr6;
 use ipnet::IpNet;
-use log::warn;
 use std::collections::HashSet;
 use std::io::{self, ErrorKind};
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr};
@@ -18,12 +17,13 @@ use windows::Win32::NetworkManagement::IpHelper::{
     SetIpInterfaceEntry, MIB_IF_ROW2, MIB_IPINTERFACE_ROW, MIB_UNICASTIPADDRESS_ROW,
 };
 use windows::Win32::NetworkManagement::Ndis::{IF_MAX_STRING_SIZE, NET_LUID_LH};
-use windows::Win32::Networking::WinSock::{AF_INET, AF_INET6, AF_UNSPEC, SOCKADDR_INET};
+use windows::Win32::Networking::WinSock::{
+    ADDRESS_FAMILY, AF_INET, AF_INET6, AF_UNSPEC, SOCKADDR_INET,
+};
 
 const ERROR_ACCESS_DENIED: HRESULT = Foundation::ERROR_ACCESS_DENIED.to_hresult();
 const ERROR_FILE_NOT_FOUND: HRESULT = Foundation::ERROR_FILE_NOT_FOUND.to_hresult();
 const ERROR_INVALID_NAME: HRESULT = Foundation::ERROR_INVALID_NAME.to_hresult();
-const ERROR_NOT_FOUND: HRESULT = Foundation::ERROR_NOT_FOUND.to_hresult();
 
 fn convert_sockaddr(sa: SOCKADDR_INET) -> SocketAddr {
     unsafe {
@@ -181,43 +181,41 @@ impl InterfaceHandle {
     pub fn mtu(&self) -> Result<u32, Error> {
         Ok(self.mib_if_row2()?.Mtu)
     }
-
+    pub fn set_mtu_v4(&self, mtu: u32) -> Result<(), Error> {
+        self.set_mtu_impl(mtu, AF_INET)
+    }
+    pub fn set_mtu_v6(&self, mtu: u32) -> Result<(), Error> {
+        self.set_mtu_impl(mtu, AF_INET6)
+    }
     pub fn set_mtu(&self, mtu: u32) -> Result<(), Error> {
         for family in [AF_INET, AF_INET6] {
-            let mut row = MIB_IPINTERFACE_ROW {
-                Family: family,
-                InterfaceIndex: self.index,
-                ..Default::default()
-            };
-
-            let code = unsafe { GetIpInterfaceEntry(&mut row) };
-            match code.ok().map_err(HRESULT::from) {
-                Ok(_) => Ok(()),
-                Err(ERROR_FILE_NOT_FOUND) => Err(Error::InterfaceNotFound),
-                Err(ERROR_NOT_FOUND) => {
-                    warn!("Interface not found with family: {:?}", family);
-                    continue;
-                }
-                Err(e) => Err(WinError::from(e).into()),
-            }?;
-
-            row.NlMtu = mtu;
-
-            let code = unsafe { SetIpInterfaceEntry(&mut row) };
-            match code.ok().map_err(HRESULT::from) {
-                Ok(_) => Ok(()),
-                Err(ERROR_FILE_NOT_FOUND) => Err(Error::InterfaceNotFound),
-                Err(ERROR_NOT_FOUND) => {
-                    warn!("Interface not found with family: {:?}", family);
-                    continue;
-                }
-                Err(ERROR_ACCESS_DENIED) => {
-                    Err(io::Error::from(ErrorKind::PermissionDenied).into())
-                }
-                Err(e) => Err(WinError::from(e).into()),
-            }?;
+            self.set_mtu_impl(mtu, family)?;
         }
         Ok(())
+    }
+    fn set_mtu_impl(&self, mtu: u32, family: ADDRESS_FAMILY) -> Result<(), Error> {
+        let mut row = MIB_IPINTERFACE_ROW {
+            Family: family,
+            InterfaceIndex: self.index,
+            ..Default::default()
+        };
+
+        let code = unsafe { GetIpInterfaceEntry(&mut row) };
+        match code.ok().map_err(HRESULT::from) {
+            Ok(_) => Ok(()),
+            Err(ERROR_FILE_NOT_FOUND) => Err(Error::InterfaceNotFound),
+            Err(e) => Err(WinError::from(e).into()),
+        }?;
+
+        row.NlMtu = mtu;
+
+        let code = unsafe { SetIpInterfaceEntry(&mut row) };
+        match code.ok().map_err(HRESULT::from) {
+            Ok(_) => Ok(()),
+            Err(ERROR_FILE_NOT_FOUND) => Err(Error::InterfaceNotFound),
+            Err(ERROR_ACCESS_DENIED) => Err(io::Error::from(ErrorKind::PermissionDenied).into()),
+            Err(e) => Err(WinError::from(e).into()),
+        }
     }
 
     pub fn name(&self) -> Result<String, Error> {
