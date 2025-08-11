@@ -1,5 +1,5 @@
 # netconfig-rs
-==============   
+
 
 [![Crates.io](https://img.shields.io/crates/v/netconfig-rs.svg)](https://crates.io/crates/netconfig-rs)
 [![netconfig-rs](https://docs.rs/netconfig-rs/badge.svg)](https://docs.rs/netconfig-rs/latest/netconfig-rs)
