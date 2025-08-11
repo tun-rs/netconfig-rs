@@ -89,11 +89,7 @@ impl InterfaceExt for Interface {
     fn try_from_luid(luid: u64) -> Result<Interface, Error> {
         let luid = NET_LUID_LH { Value: luid };
         let mut index = 0;
-<<<<<<< HEAD
-        unsafe { ConvertInterfaceLuidToIndex(&luid, &mut index)? };
-=======
         unsafe { ConvertInterfaceLuidToIndex(&luid, &mut index).ok()? };
->>>>>>> 8d68c20ff9446fd66b6d2f1f9950f67224854f8c
         Ok(unsafe { Self::from_index_unchecked(index) })
     }
 
@@ -253,11 +249,7 @@ impl InterfaceHandle {
     pub fn try_from_index(index: u32) -> Result<Interface, Error> {
         let mut luid = NET_LUID_LH::default();
         let code = unsafe { ConvertInterfaceIndexToLuid(index, &mut luid) };
-<<<<<<< HEAD
-        match code.map_err(HRESULT::from) {
-=======
         match code.ok().map_err(HRESULT::from) {
->>>>>>> 8d68c20ff9446fd66b6d2f1f9950f67224854f8c
             Ok(_) => Ok(unsafe { Interface::from_index_unchecked(index) }),
             Err(ERROR_FILE_NOT_FOUND) => Err(Error::InterfaceNotFound),
             Err(e) => Err(WinError::from(e).into()),
