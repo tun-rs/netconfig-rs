@@ -22,8 +22,8 @@ impl InterfaceHandle {
 
             let (address, netmask) = match (address.family(), netmask.family()) {
                 (Some(Inet), Some(Inet)) => (
-                    IpAddr::V4(address.as_sockaddr_in().unwrap().ip().into()),
-                    IpAddr::V4(netmask.as_sockaddr_in().unwrap().ip().into()),
+                    IpAddr::V4(address.as_sockaddr_in().unwrap().ip()),
+                    IpAddr::V4(netmask.as_sockaddr_in().unwrap().ip()),
                 ),
                 (Some(Inet6), Some(Inet6)) => (
                     IpAddr::V6(address.as_sockaddr_in6().unwrap().ip()),
