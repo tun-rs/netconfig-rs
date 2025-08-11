@@ -1,6 +1,6 @@
 [package]
 name = "netconfig-rs"
-version = "0.1.3"
+version = "0.1.4"
 rust-version = "1.85"
 edition = "2021"
 license = "MIT"
@@ -23,7 +23,7 @@ system-configuration-sys = "0.5.0"
 core-foundation = "0.9.3"
 
 [target.'cfg(unix)'.dependencies]
-nix = {version = "0.30.1",features = ["ioctl","net"]}
+nix = { version = "0.30.1", features = ["ioctl", "net"] }
 libc = "0.2.135"
 
 
@@ -35,4 +35,4 @@ thiserror = "2.0.12"
 mac_address = "1.1.8"
 
 [dev-dependencies]
-clap = { version = "4.5.43",features = ["derive"]}
+clap = { version = "4.5.43", features = ["derive"] }
