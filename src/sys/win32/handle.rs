@@ -1,7 +1,6 @@
 use crate::sys::mib_table::MibTable;
 use crate::sys::InterfaceHandle;
 use crate::{Error, Interface};
-use advmac::MacAddr6;
 use ipnet::IpNet;
 use std::collections::HashSet;
 use std::io::{self, ErrorKind};
@@ -273,7 +272,7 @@ impl InterfaceHandle {
         }
     }
 
-    pub fn hwaddress(&self) -> Result<MacAddr6, Error> {
+    pub fn hwaddress(&self) -> Result<[u8; 6], Error> {
         self.mib_if_row2()?.PhysicalAddress[..6]
             .try_into()
             .map_err(|_| Error::UnexpectedMetadata)

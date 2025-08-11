@@ -2,7 +2,6 @@ use super::scinterface::SCNetworkInterface;
 use crate::sys::{dummy_socket, ioctls, InterfaceHandle};
 use crate::sys::{ifreq, InterfaceName};
 use crate::{Error, Interface};
-use advmac::MacAddr6;
 use ipnet::IpNet;
 use nix::sys::socket::{SockaddrIn, SockaddrIn6};
 use std::net;
@@ -66,7 +65,7 @@ impl InterfaceHandle {
         todo!()
     }
 
-    pub fn hwaddress(&self) -> Result<MacAddr6, Error> {
+    pub fn hwaddress(&self) -> Result<[u8; 6], Error> {
         todo!()
     }
 }

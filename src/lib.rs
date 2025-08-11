@@ -1,5 +1,4 @@
 mod error;
-use advmac::MacAddr6;
 pub use error::Error;
 pub use ipnet;
 use ipnet::IpNet;
@@ -56,7 +55,7 @@ impl Interface {
         self.0.index()
     }
     /// Returns MAC address, assigned to this Interface
-    pub fn hwaddress(&self) -> Result<MacAddr6, Error> {
+    pub fn hwaddress(&self) -> Result<[u8; 6], Error> {
         self.0.hwaddress()
     }
     /// # Safety

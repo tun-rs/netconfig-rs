@@ -1,7 +1,6 @@
 use crate::sys::ifreq::ifreq;
 use crate::sys::{dummy_socket, ioctls, InterfaceHandle};
 use crate::{Error, Interface};
-use advmac::MacAddr6;
 use ipnet::IpNet;
 use libc::{AF_INET, AF_INET6, ARPHRD_ETHER};
 use netlink_packet_route::{
@@ -18,7 +17,7 @@ use std::os::unix::io::AsRawFd;
 pub trait InterfaceExt {
     fn set_up(&self, v: bool) -> Result<(), Error>;
     fn set_running(&self, v: bool) -> Result<(), Error>;
-    fn set_hwaddress(&self, hwaddress: MacAddr6) -> Result<(), Error>;
+    fn set_hwaddress(&self, hwaddress: [u8; 6]) -> Result<(), Error>;
     fn set_packet_info(&self, v: bool) -> Result<(), Error>;
 }
 
@@ -74,15 +73,18 @@ impl InterfaceHandle {
         Ok(())
     }
 
-    pub fn hwaddress(&self) -> Result<MacAddr6, Error> {
+    pub fn hwaddress(&self) -> Result<[u8; 6], Error> {
         let mut req = ifreq::new(self.name()?)?;
         let socket = dummy_socket()?;
 
         unsafe { ioctls::siocgifhwaddr(socket.as_raw_fd(), &mut req) }?;
-        Ok(
-            TryInto::<MacAddr6>::try_into(unsafe { &req.ifr_ifru.ifru_hwaddr.sa_data[0..6] })
-                .map_err(|e| std::io::Error::other(e.to_string()))?,
-        )
+        let mut rs = [0; 6];
+        unsafe {
+            for (i, b) in req.ifr_ifru.ifru_hwaddr.sa_data.iter().take(6).enumerate() {
+                rs[i] = *b as _;
+            }
+        }
+        Ok(rs)
     }
 }
 
@@ -94,7 +96,7 @@ impl InterfaceExt for Interface {
         self.0.set_running(v)
     }
 
-    fn set_hwaddress(&self, hwaddress: MacAddr6) -> Result<(), Error> {
+    fn set_hwaddress(&self, hwaddress: [u8; 6]) -> Result<(), Error> {
         let mut req = ifreq::new(self.name()?)?;
         req.ifr_ifru.ifru_hwaddr = libc::sockaddr {
             sa_family: ARPHRD_ETHER,
@@ -102,7 +104,8 @@ impl InterfaceExt for Interface {
         };
 
         unsafe {
-            req.ifr_ifru.ifru_hwaddr.sa_data[0..6].copy_from_slice(hwaddress.as_c_slice());
+            req.ifr_ifru.ifru_hwaddr.sa_data[0..6]
+                .copy_from_slice(hwaddress.map(|c| c as _).as_slice());
         }
 
         let socket = dummy_socket()?;
