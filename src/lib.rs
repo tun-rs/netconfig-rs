@@ -1,6 +1,5 @@
 mod error;
 use advmac::MacAddr6;
-use delegate::delegate;
 pub use error::Error;
 pub use ipnet;
 use ipnet::IpNet;
@@ -16,33 +15,47 @@ pub mod sys;
 pub struct Interface(sys::InterfaceHandle);
 
 impl Interface {
-    delegate! {
-        to self.0 {
-            pub fn add_address(&self, network: IpNet) -> Result<(), Error>;
-            pub fn remove_address(&self, network: IpNet) -> Result<(), Error>;
-            /// Returns array of IP addresses, assigned to this Interface
-            pub fn addresses(&self) -> Result<Vec<IpNet>, Error>;
-
-            pub fn mtu(&self) -> Result<u32, Error>;
-            pub fn set_mtu(&self, mtu: u32) -> Result<(), Error>;
-            #[cfg(windows)]
-            pub fn set_mtu_v4(&self, mtu: u32) -> Result<(), Error>;
-            #[cfg(windows)]
-            pub fn set_mtu_v6(&self, mtu: u32) -> Result<(), Error>;
-
-            pub fn name(&self) -> Result<String, Error>;
-            pub fn index(&self) -> Result<u32, Error>;
-            /// Returns MAC address, assigned to this Interface
-            pub fn hwaddress(&self) -> Result<MacAddr6, Error>;
-        }
+    /// Add address to the interface
+    pub fn add_address(&self, network: IpNet) -> Result<(), Error> {
+        self.0.add_address(network)
     }
-
+    /// Remove the specified address from the interface
+    pub fn remove_address(&self, network: IpNet) -> Result<(), Error> {
+        self.0.remove_address(network)
+    }
+    /// Returns list of IP addresses, assigned to this Interface
+    pub fn addresses(&self) -> Result<Vec<IpNet>, Error> {
+        self.0.addresses()
+    }
+    pub fn mtu(&self) -> Result<u32, Error> {
+        self.0.mtu()
+    }
+    pub fn set_mtu(&self, mtu: u32) -> Result<(), Error> {
+        self.0.set_mtu(mtu)
+    }
+    #[cfg(windows)]
+    pub fn set_mtu_v4(&self, mtu: u32) -> Result<(), Error> {
+        self.0.set_mtu_v4(mtu)
+    }
+    #[cfg(windows)]
+    pub fn set_mtu_v6(&self, mtu: u32) -> Result<(), Error> {
+        self.0.set_mtu_v6(mtu)
+    }
+    pub fn name(&self) -> Result<String, Error> {
+        self.0.name()
+    }
+    pub fn index(&self) -> Result<u32, Error> {
+        self.0.index()
+    }
+    /// Returns MAC address, assigned to this Interface
+    pub fn hwaddress(&self) -> Result<MacAddr6, Error> {
+        self.0.hwaddress()
+    }
     /// # Safety
     /// The passed interface index must be valid
     pub unsafe fn from_index_unchecked(index: u32) -> Self {
         Self(sys::InterfaceHandle { index })
     }
-
     /// Returns `InterfaceHandle` from given interface index or Error if not found.
     ///
     /// This method checks given index for validity and interface for presence. If you want to get
@@ -50,7 +63,6 @@ impl Interface {
     pub fn try_from_index(index: u32) -> Result<Self, Error> {
         sys::InterfaceHandle::try_from_index(index)
     }
-
     /// Returns `InterfaceHandle` from given name or Error if not found.
     ///
     /// On Windows it uses interface name, that is similar to `ethernet_32774`.
