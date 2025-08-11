@@ -30,10 +30,6 @@ impl Interface {
     pub fn mtu(&self) -> Result<u32, Error> {
         self.0.mtu()
     }
-    #[cfg(windows)]
-    pub fn mtu_v6(&self) -> Result<u32, Error> {
-        self.0.mtu_v6()
-    }
     pub fn set_mtu(&self, mtu: u32) -> Result<(), Error> {
         self.0.set_mtu(mtu)
     }
