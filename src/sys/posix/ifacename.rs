@@ -1,4 +1,3 @@
-use delegate::delegate;
 use std::ffi::CString;
 use std::iter::zip;
 use std::str::FromStr;
@@ -70,13 +69,16 @@ impl InterfaceName {
     pub fn is_valid(&self) -> bool {
         self.0[libc::IFNAMSIZ - 1] == 0
     }
-
-    delegate! {
-        to self.0 {
-            pub fn as_slice(&self) -> &[libc::c_char];
-            pub fn as_mut_slice(&mut self) -> &mut [libc::c_char];
-            pub fn as_ptr(&self) -> *const libc::c_char;
-            pub fn as_mut_ptr(&mut self) -> *mut libc::c_char;
-        }
+    pub fn as_slice(&self) -> &[libc::c_char] {
+        self.0.as_slice()
+    }
+    pub fn as_mut_slice(&mut self) -> &mut [libc::c_char] {
+        self.0.as_mut_slice()
+    }
+    pub fn as_ptr(&self) -> *const libc::c_char {
+        self.0.as_ptr()
+    }
+    pub fn as_mut_ptr(&mut self) -> *mut libc::c_char {
+        self.0.as_mut_ptr()
     }
 }

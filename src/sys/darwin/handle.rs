@@ -3,7 +3,6 @@ use crate::sys::{dummy_socket, ioctls, InterfaceHandle};
 use crate::sys::{ifreq, InterfaceName};
 use crate::{Error, Interface};
 use advmac::MacAddr6;
-use delegate::delegate;
 use ipnet::IpNet;
 use nix::sys::socket::{SockaddrIn, SockaddrIn6};
 use std::net;
@@ -79,11 +78,10 @@ impl InterfaceExt for Interface {
             None => Ok(self.name()?),
         }
     }
-
-    delegate! {
-        to self.0 {
-            fn set_up(&self, v: bool) -> Result<(), Error>;
-            fn set_running(&self, v: bool) -> Result<(), Error>;
-        }
+    fn set_up(&self, v: bool) -> Result<(), Error> {
+        self.0.set_up(v)
+    }
+    fn set_running(&self, v: bool) -> Result<(), Error> {
+        self.0.set_running(v)
     }
 }

@@ -2,7 +2,6 @@ use crate::sys::ifreq::ifreq;
 use crate::sys::{dummy_socket, ioctls, InterfaceHandle};
 use crate::{Error, Interface};
 use advmac::MacAddr6;
-use delegate::delegate;
 use ipnet::IpNet;
 use libc::{AF_INET, AF_INET6, ARPHRD_ETHER};
 use log::debug;
@@ -91,11 +90,11 @@ impl InterfaceHandle {
 }
 
 impl InterfaceExt for Interface {
-    delegate! {
-        to self.0 {
-            fn set_up(&self, v: bool) -> Result<(), Error>;
-            fn set_running(&self, v: bool) -> Result<(), Error>;
-        }
+    fn set_up(&self, v: bool) -> Result<(), Error> {
+        self.0.set_up(v)
+    }
+    fn set_running(&self, v: bool) -> Result<(), Error> {
+        self.0.set_running(v)
     }
 
     fn set_hwaddress(&self, hwaddress: MacAddr6) -> Result<(), Error> {
