@@ -44,9 +44,9 @@ impl From<widestring::error::Utf16Error> for Error {
     }
 }
 
-impl Into<io::Error> for Error {
-    fn into(self) -> io::Error {
-        match self {
+impl From<Error> for io::Error {
+    fn from(value: Error) -> Self {
+        match value {
             Error::Io(e) => e,
             e => io::Error::other(format!("{:?}", e)),
         }
