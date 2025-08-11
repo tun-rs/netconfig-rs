@@ -16,6 +16,6 @@ pub(crate) fn dummy_socket() -> Result<net::UdpSocket, Error> {
 pub(crate) fn list_interfaces() -> Result<Vec<crate::Interface>, Error> {
     Ok(nix::net::if_::if_nameindex()?
         .iter()
-        .map(|a| crate::Interface::from_index_unchecked(a.index()))
+        .map(|a| unsafe { crate::Interface::from_index_unchecked(a.index()) })
         .collect())
 }

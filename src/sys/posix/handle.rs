@@ -16,7 +16,9 @@ impl InterfaceHandle {
         let name = self.name()?;
 
         for interface in getifaddrs()?.filter(|x| x.interface_name == name) {
-            let (Some(address), Some(netmask)) = (interface.address, interface.netmask) else { continue; };
+            let (Some(address), Some(netmask)) = (interface.address, interface.netmask) else {
+                continue;
+            };
 
             let (address, netmask) = match (address.family(), netmask.family()) {
                 (Some(Inet), Some(Inet)) => (
@@ -73,7 +75,7 @@ impl InterfaceHandle {
 
         match unsafe { libc::if_nametoindex(name.as_ptr()) } {
             0 => Err(Error::InterfaceNotFound),
-            n => Ok(Interface::from_index_unchecked(n)),
+            n => Ok(unsafe { Interface::from_index_unchecked(n) }),
         }
     }
 
@@ -82,7 +84,7 @@ impl InterfaceHandle {
             .iter()
             .find(|if_| if_.index() == index)
         {
-            Some(_) => Ok(Interface::from_index_unchecked(index)),
+            Some(_) => Ok(unsafe { Interface::from_index_unchecked(index) }),
             None => Err(Error::InterfaceNotFound),
         }
     }

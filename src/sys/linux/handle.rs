@@ -12,9 +12,9 @@ use netlink_packet_route::{
 };
 use netlink_sys::constants::NETLINK_ROUTE;
 use netlink_sys::{Socket, SocketAddr};
+use nix::net::if_::InterfaceFlags;
 use std::net::IpAddr;
 use std::os::unix::io::AsRawFd;
-use nix::net::if_::InterfaceFlags;
 
 // Public interface (platform extension)
 pub trait InterfaceExt {

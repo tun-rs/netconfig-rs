@@ -24,7 +24,7 @@ impl<'a, T, R> Default for MibTable<'a, T, R> {
 impl<'a> MibTable<'a, MIB_UNICASTIPADDRESS_TABLE, MIB_UNICASTIPADDRESS_ROW> {
     pub fn GetUnicastIpAddressTable(family: &ADDRESS_FAMILY) -> Result<Self, Error> {
         let mut result = Self::default();
-        unsafe { GetUnicastIpAddressTable(family.0 as _, &mut result.table)? }
+        unsafe { GetUnicastIpAddressTable(*family, &mut result.table).ok()? }
         Ok(result)
     }
 
@@ -39,7 +39,7 @@ impl<'a> MibTable<'a, MIB_UNICASTIPADDRESS_TABLE, MIB_UNICASTIPADDRESS_ROW> {
 impl<'a> MibTable<'a, MIB_IPINTERFACE_TABLE, MIB_IPINTERFACE_ROW> {
     pub fn GetIpInterfaceTable(family: &ADDRESS_FAMILY) -> Result<Self, Error> {
         let mut result = Self::default();
-        unsafe { GetIpInterfaceTable(family.0 as _, &mut result.table)? }
+        unsafe { GetIpInterfaceTable(*family, &mut result.table).ok()? }
         Ok(result)
     }
 
