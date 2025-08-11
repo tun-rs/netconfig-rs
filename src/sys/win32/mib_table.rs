@@ -12,7 +12,7 @@ pub struct MibTable<'a, T, R> {
     phantom: PhantomData<&'a R>,
 }
 
-impl<'a, T, R> Default for MibTable<'a, T, R> {
+impl<T, R> Default for MibTable<'_, T, R> {
     fn default() -> Self {
         Self {
             table: std::ptr::null_mut(),
@@ -51,7 +51,7 @@ impl<'a> MibTable<'a, MIB_IPINTERFACE_TABLE, MIB_IPINTERFACE_ROW> {
     }
 }
 
-impl<'a, T, R> Drop for MibTable<'a, T, R> {
+impl<T, R> Drop for MibTable<'_, T, R> {
     fn drop(&mut self) {
         if !self.table.is_null() {
             unsafe {

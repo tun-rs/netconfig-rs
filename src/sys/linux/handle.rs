@@ -4,7 +4,6 @@ use crate::{Error, Interface};
 use advmac::MacAddr6;
 use ipnet::IpNet;
 use libc::{AF_INET, AF_INET6, ARPHRD_ETHER};
-use log::debug;
 use netlink_packet_route::{
     address::Nla as AddressNla, AddressMessage, NetlinkHeader, NetlinkMessage, NetlinkPayload,
     RtnlMessage, NLM_F_DUMP, NLM_F_REQUEST,
@@ -45,7 +44,6 @@ impl InterfaceHandle {
         let mut buf = vec![0; req.header.length as _];
         req.serialize(&mut buf);
 
-        debug!(">>> {:?}", req);
         socket.send(&buf, 0)?;
 
         Ok(())
@@ -71,7 +69,6 @@ impl InterfaceHandle {
         let mut buf = vec![0; req.header.length as _];
         req.serialize(&mut buf);
 
-        debug!(">>> {:?}", req);
         socket.send(&buf, 0)?;
 
         Ok(())
