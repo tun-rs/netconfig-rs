@@ -2,11 +2,12 @@ use crate::sys::ifreq::ifreq;
 use crate::sys::{dummy_socket, ioctls, InterfaceHandle};
 use crate::{Error, Interface};
 use ipnet::IpNet;
-use libc::{AF_INET, AF_INET6, ARPHRD_ETHER};
-use netlink_packet_route::{
-    address::Nla as AddressNla, AddressMessage, NetlinkHeader, NetlinkMessage, NetlinkPayload,
-    RtnlMessage, NLM_F_DUMP, NLM_F_REQUEST,
+use libc::ARPHRD_ETHER;
+use netlink_packet_core::{
+    NetlinkHeader, NetlinkMessage, NetlinkPayload, NLM_F_DUMP, NLM_F_REQUEST,
 };
+use netlink_packet_route::address::{AddressAttribute, AddressMessage};
+use netlink_packet_route::{AddressFamily, RouteNetlinkMessage};
 use netlink_sys::constants::NETLINK_ROUTE;
 use netlink_sys::{Socket, SocketAddr};
 use nix::net::if_::InterfaceFlags;
@@ -29,14 +30,12 @@ impl InterfaceHandle {
         socket.connect(&SocketAddr::new(0, 0))?;
 
         let message = make_address_message(self.index, network);
-
-        let mut req = NetlinkMessage {
-            header: NetlinkHeader {
-                flags: NLM_F_DUMP | NLM_F_REQUEST,
-                ..Default::default()
-            },
-            payload: NetlinkPayload::from(RtnlMessage::NewAddress(message)),
-        };
+        let mut nl_hdr = NetlinkHeader::default();
+        nl_hdr.flags = NLM_F_DUMP | NLM_F_REQUEST;
+        let mut req = NetlinkMessage::new(
+            nl_hdr,
+            NetlinkPayload::from(RouteNetlinkMessage::NewAddress(message)),
+        );
 
         req.finalize();
 
@@ -54,14 +53,12 @@ impl InterfaceHandle {
         socket.connect(&SocketAddr::new(0, 0))?;
 
         let message = make_address_message(self.index, network);
-
-        let mut req = NetlinkMessage {
-            header: NetlinkHeader {
-                flags: NLM_F_REQUEST,
-                ..Default::default()
-            },
-            payload: NetlinkPayload::from(RtnlMessage::DelAddress(message)),
-        };
+        let mut nl_hdr = NetlinkHeader::default();
+        nl_hdr.flags = NLM_F_REQUEST;
+        let mut req = NetlinkMessage::new(
+            nl_hdr,
+            NetlinkPayload::from(RouteNetlinkMessage::DelAddress(message)),
+        );
 
         req.finalize();
 
@@ -126,33 +123,33 @@ fn make_address_message(index: u32, network: IpNet) -> AddressMessage {
     let mut message = AddressMessage::default();
     message.header.prefix_len = network.prefix_len();
     message.header.index = index;
-
-    let address_vec = match network.addr() {
-        IpAddr::V4(ipv4) => {
-            message.header.family = AF_INET as _;
-            ipv4.octets().to_vec()
-        }
-        IpAddr::V6(ipv6) => {
-            message.header.family = AF_INET6 as _;
-            ipv6.octets().to_vec()
-        }
+    let addr = network.addr();
+    message.header.family = if addr.is_ipv4() {
+        AddressFamily::Inet
+    } else {
+        AddressFamily::Inet6
     };
 
-    if network.addr().is_multicast() {
-        message.nlas.push(AddressNla::Multicast(address_vec));
-    } else if network.addr().is_unspecified() {
-        message.nlas.push(AddressNla::Unspec(address_vec));
-    } else {
-        message.nlas.push(AddressNla::Address(address_vec.clone()));
-
-        if let IpNet::V4(network_v4) = network {
-            // for IPv4 the IFA_LOCAL address can be set to the same value as IFA_ADDRESS
-            message.nlas.push(AddressNla::Local(address_vec));
-            // set the IFA_BROADCAST address as well (IPv6 does not support broadcast)
-            message.nlas.push(AddressNla::Broadcast(
-                network_v4.broadcast().octets().to_vec(),
-            ));
+    if let IpAddr::V6(addr) = addr {
+        if addr.is_multicast() {
+            message.attributes.push(AddressAttribute::Multicast(addr));
+            return message;
         }
+    }
+
+    message
+        .attributes
+        .push(AddressAttribute::Address(network.addr()));
+
+    if let IpNet::V4(network_v4) = network {
+        // for IPv4 the IFA_LOCAL address can be set to the same value as IFA_ADDRESS
+        message
+            .attributes
+            .push(AddressAttribute::Local(network.addr()));
+        // set the IFA_BROADCAST address as well (IPv6 does not support broadcast)
+        message
+            .attributes
+            .push(AddressAttribute::Broadcast(network_v4.broadcast()));
     }
 
     message
