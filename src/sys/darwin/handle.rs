@@ -1,4 +1,4 @@
-use super::scinterface::SCNetworkInterface;
+use crate::sys::scinterface::SCNetworkInterface;
 use crate::sys::{dummy_socket, ioctls, InterfaceHandle};
 use crate::sys::{ifreq, InterfaceName};
 use crate::{Error, Interface};
