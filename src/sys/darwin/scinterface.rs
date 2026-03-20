@@ -1,10 +1,10 @@
+use core_foundation::declare_TCFType;
 use core_foundation::impl_TCFType;
 use core_foundation::{array::CFArray, base::TCFType, string::CFString};
 use system_configuration_sys::network_configuration::{
     SCNetworkInterfaceCopyAll, SCNetworkInterfaceGetBSDName,
     SCNetworkInterfaceGetLocalizedDisplayName, SCNetworkInterfaceGetTypeID, SCNetworkInterfaceRef,
 };
-use core_foundation::declare_TCFType;
 
 core_foundation::declare_TCFType!(SCNetworkInterface, SCNetworkInterfaceRef);
 core_foundation::impl_TCFType!(
